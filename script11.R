@@ -23,7 +23,7 @@
 #
 ################################################################################
 
-library(haven)
+# library(haven) # Not needed for CSV
 library(dplyr)
 library(lavaan)
 # library(semPlot)  # Optional - for path diagrams
@@ -33,8 +33,8 @@ cat("SCRIPT 11: LATENT CONSTRUCT MODELING\n")
 cat("================================================================================\n\n")
 
 # Set paths
-base_dir <- getwd()
-data_dir <- file.path(dirname(base_dir), "Data")
+base_dir <- "."
+data_dir <- "."
 
 # Create output directory for latent models
 if (!dir.exists("Results/Latent")) {
@@ -47,9 +47,9 @@ if (!dir.exists("Results/Latent")) {
 
 cat("Loading datasets...\n")
 
-study1 <- read_sav(file.path(data_dir, "Study1_Only.sav"))
-study2 <- read_sav(file.path(data_dir, "Study2_Only.sav"))
-combined <- read_sav(file.path(data_dir, "Combined_Study1_Study2_FULL.sav"))  # With GSC items
+study1 <- read.csv("dataset.csv")
+study2 <- read.csv("dataset.csv")
+combined <- read.csv("dataset.csv")  # With GSC items
 
 cat("  Study 1: N =", nrow(study1), "\n")
 cat("  Study 2: N =", nrow(study2), "\n")
