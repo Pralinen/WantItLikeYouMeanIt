@@ -20,7 +20,7 @@
 #
 ################################################################################
 
-library(haven)
+# library(haven) # Not needed for CSV
 library(dplyr)
 library(lavaan)
 library(blavaan)
@@ -32,8 +32,8 @@ cat("Testing: Controlled motivation destroys meaning ONLY via the distress signa
 cat("================================================================================\n\n")
 
 # Set paths
-base_dir <- getwd()
-data_dir <- file.path(dirname(base_dir), "Data")
+base_dir <- "."
+data_dir <- "."
 
 # Create output directory
 if (!dir.exists("Results/Latent")) {
@@ -52,7 +52,7 @@ cat("MCMC Settings: Chains =", n_chains, ", Burnin =", n_burnin, ", Samples =", 
 ################################################################################
 
 cat("Loading Combined dataset...\n")
-combined <- read_sav(file.path(data_dir, "Combined_Study1_Study2_FULL.sav"))
+combined <- read.csv("dataset.csv")
 cat("  N =", nrow(combined), "\n\n")
 
 ################################################################################
