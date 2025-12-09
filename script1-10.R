@@ -1,35 +1,23 @@
 ################################################################################
-# MASTER SCRIPT: Run ALL 10 Analyses on ALL 3 Datasets (IMPROVED VERSION)
+# MASTER SCRIPT: Run ALL 10 Analyses (Scripts 01-10)
 # Author: Liam Le Guellaff Pallin
 # Date: 2025-11-20
 #
 # Purpose:
-#   Runs ALL 10 scripts on:
-#   - Study 1 Only (N = 168, CSUS)
-#   - Study 2 Only (N = 269, WSU)
-#   - Combined (N = 437, Both)
+#   Runs Scripts 01-10 on the combined dataset (N = 437)
 #
-# Improvements:
+# Features:
 #   - Error handling: keeps running if one analysis fails
 #   - Progress tracking: saves progress after each script
-#   - All output in one organized folder: ALL_STUDIES_ANALYSIS/
 #   - Detailed error log
 #   - Time tracking per script
 #
-# ESTIMATED TIME: 6-8 hours (mostly Bayesian models)
-#
 # USAGE:
-#   cd "/Users/pralinen/Desktop/HT25/PSYK12/DK3 - Kandidatarbete/DataAnalysis"
-#   nohup Rscript ALL_STUDIES_ANALYSIS/RUN_ALL_ANALYSES.R > ALL_STUDIES_ANALYSIS/output.log 2>&1 &
-#
-# MONITOR PROGRESS:
-#   tail -f ALL_STUDIES_ANALYSIS/output.log
-#   cat ALL_STUDIES_ANALYSIS/PROGRESS.txt
-#   cat ALL_STUDIES_ANALYSIS/ERROR_LOG.txt
+#   Rscript script1-10.R
 #
 ################################################################################
 
-library(haven)
+# library(haven) # Not needed for CSV
 library(brms)
 library(lavaan)
 library(dplyr)
@@ -38,7 +26,7 @@ library(ggplot2)
 library(ppcor)  # For semi-partial correlations in Script 02
 
 # Set working directory
-setwd("/Users/pralinen/Desktop/HT25/PSYK12/DK3 - Kandidatarbete/DataAnalysis")
+# setwd() # Set your working directory here
 
 # Create organized folder structure
 base_dir <- "ALL_STUDIES_ANALYSIS"
@@ -52,13 +40,10 @@ progress_log <- character(0)
 script_times <- list()
 
 cat("################################################################\n")
-cat("################################################################\n")
-cat("RUNNING ALL 10 SCRIPTS ON ALL 3 DATASETS\n")
-cat("################################################################\n")
+cat("RUNNING ALL 10 SCRIPTS ON COMBINED DATASET\n")
 cat("################################################################\n\n")
 
 cat("Output folder:", base_dir, "\n")
-cat("Estimated time: 6-8 hours\n")
 cat("Started:", as.character(Sys.time()), "\n\n")
 
 overall_start <- Sys.time()
@@ -117,12 +102,12 @@ safe_run <- function(func, dataset_info, script_name) {
 ################################################################################
 
 datasets <- list(
-  list(name = "Study1", path = "Data/Study1_Only.sav", label = "Study 1 (N=168, CSUS)"),
-  list(name = "Study2", path = "Data/Study2_Only.sav", label = "Study 2 (N=269, WSU)"),
-  list(name = "Combined", path = "Data/Combined_Study1_Study2.sav", label = "Combined (N=437)")
+  # Using single combined dataset
+  
+  list(name = "Combined", path = "dataset.csv", label = "Combined (N=437)")
 )
 
-log_progress("Datasets defined: Study 1, Study 2, Combined")
+log_progress("Dataset loaded: Combined (N=437)")
 
 ################################################################################
 # SCRIPT 02: H1 Comparative Regression - PUBLICATION-READY VERSION
@@ -133,7 +118,7 @@ run_script_02 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
     filter(complete.cases(Autonomous, RAI, Meaning, Depression, Anxiety, Age, Sex))
 
@@ -397,7 +382,7 @@ run_script_02 <- function(dataset_info) {
 ################################################################################
 
 run_script_03 <- function(dataset_info) {
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
     filter(complete.cases(RAI, Autonomous, Meaning, Depression, Anxiety, Age, Sex))
 
@@ -433,7 +418,7 @@ run_script_03 <- function(dataset_info) {
 ################################################################################
 
 run_script_03b <- function(dataset_info) {
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
     filter(complete.cases(Autonomous, Meaning, Depression, Anxiety, Age, Sex))
 
@@ -473,7 +458,7 @@ run_script_04 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore, RAI) %>%
     filter(complete.cases(Autonomous, RAI, Meaning, Depression, Anxiety, Age, Sex)) %>%
     mutate(Meaning_ord = ordered(Meaning))
@@ -671,7 +656,7 @@ run_script_05 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
     filter(complete.cases(Autonomous, Controlled, Meaning, Depression, Anxiety, Age, Sex))
 
@@ -850,7 +835,7 @@ run_script_05 <- function(dataset_info) {
 ################################################################################
 
 run_script_06 <- function(dataset_info) {
-  data_raw <- read_sav(dataset_info$path) %>%
+  data_raw <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
     filter(complete.cases(Autonomous, Controlled, RAI, Meaning, Depression, Anxiety, Age, Sex))
 
@@ -943,7 +928,7 @@ run_script_07 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
     filter(complete.cases(Autonomous, RAI, Meaning, Depression, Anxiety, Age, Sex))
 
@@ -1121,7 +1106,7 @@ run_script_08 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data <- read_sav(dataset_info$path) %>%
+  data <- read.csv(dataset_info$path) %>%
     mutate(Depression = DEP_Corrected) %>%
     filter(complete.cases(Autonomous, Controlled, Depression, Age, Sex)) %>%
     mutate(Depression_ord = ordered(Depression))
@@ -1276,11 +1261,11 @@ run_script_09 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data_raw <- read_sav(dataset_info$path)
+  data_raw <- read.csv(dataset_info$path)
   cesd_items <- paste0("CESD_", 1:10)
 
   # Handle different variable names across datasets:
-  # Study 1 has SCReasons/nonSCReasons, Study 2 & Combined have Autonomous/Controlled
+  # Dataset uses Autonomous/Controlled variables
   if ("SCReasons" %in% names(data_raw)) {
     data_wide <- data_raw %>%
       dplyr::select(any_of(c("id", cesd_items, "SCReasons", "nonSCReasons", "Age", "Sex"))) %>%
@@ -1458,11 +1443,11 @@ run_script_10 <- function(dataset_info) {
   cat("Dataset:", dataset_info$label, "\n\n")
 
   # Load and prepare data
-  data_raw <- read_sav(dataset_info$path)
+  data_raw <- read.csv(dataset_info$path)
   mil_items <- paste0("MIL", 1:4)  # MMLS General Meaning Judgements subscale (4 items)
 
   # Handle different variable names across datasets:
-  # Study 1 has SCReasons/nonSCReasons, Study 2 & Combined have Autonomous/Controlled
+  # Dataset uses Autonomous/Controlled variables
   if ("SCReasons" %in% names(data_raw)) {
     data_wide <- data_raw %>%
       dplyr::select(any_of(c("id", mil_items, "SCReasons", "nonSCReasons",
@@ -1816,21 +1801,19 @@ cat("COMPLETION SUMMARY:\n")
 cat("==================\n\n")
 
 # Print completion matrix
-cat("         | Study1 | Study2 | Combined\n")
-cat("---------+--------+--------+---------\n")
+cat("         | Combined\n")
+cat("---------+---------\n")
 for (i in 2:10) {
   script_num <- sprintf("%02d", i)
-  cat(sprintf("Script %s | %s      | %s      | %s\n",
+  cat(sprintf("Script %s | %s\n",
               script_num,
-              completion_summary[[paste0("Study1_", script_num)]],
-              completion_summary[[paste0("Study2_", script_num)]],
               completion_summary[[paste0("Combined_", script_num)]]))
 }
 
 cat("\n\nERROR SUMMARY:\n")
 cat("==============\n")
 if (length(error_log) == 0) {
-  cat("✅ NO ERRORS - All 27 analyses completed successfully!\n")
+  cat("✅ NO ERRORS - All analyses completed successfully!\n")
 } else {
   cat("⚠️ ", length(error_log), " error(s) encountered:\n\n")
   for (err in error_log) {
@@ -1842,12 +1825,10 @@ if (length(error_log) == 0) {
 cat("\n\nOUTPUT LOCATIONS:\n")
 cat("=================\n")
 cat("Main folder:", base_dir, "/\n")
-cat("  - output.log          (this log)\n")
 cat("  - PROGRESS.txt        (progress tracking)\n")
 cat("  - ERROR_LOG.txt       (error details)\n")
-cat("  - Results/            (27 .rds files - one per script per dataset)\n")
-cat("  - Models/             (12 Bayesian model files)\n")
-cat("  - ALL_RESULTS_MASTER.rds (master results file)\n\n")
+cat("  - Results/            (.rds result files)\n")
+cat("  - Models/             (Bayesian model files)\n\n")
 
 log_progress("MASTER SCRIPT COMPLETED")
 
