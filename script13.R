@@ -1,24 +1,7 @@
 ################################################################################
 # SCRIPT 13: IEA FRAMEWORK - DISTRESS MEDIATION MODEL
 ################################################################################
-#
-# Purpose: Test the Intention-Experience Alignment (IEA) Framework
-#          The "missing link" - explicitly modeling CTRL → DEP → MIL
-#
-# Theoretical Framework:
-#   - Meaning = experience tracking intended trajectory
-#   - Depression = signal that experience is NOT tracking intended trajectory
-#   - Autonomous motivation = goals that ARE your trajectory → meaning directly
-#   - Controlled motivation = goals outside trajectory → misalignment → distress → meaning loss
-#
-# The Key Hypothesis:
-#   - AUTO → MIL (direct, positive) = Alignment creates meaning
-#   - CTRL → MIL (direct) = ZERO (no direct effect)
-#   - CTRL → DEP → MIL (indirect, negative) = Misalignment creates distress signal
-#
-# This is the definitive test of the IEA framework.
-#
-################################################################################
+
 
 # library(haven) # Not needed for CSV
 library(dplyr)
