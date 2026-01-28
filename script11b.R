@@ -1,26 +1,6 @@
 ################################################################################
 # SCRIPT 11b: BAYESIAN LATENT CONSTRUCT MODELING (blavaan)
 ################################################################################
-#
-# Purpose: Bayesian version of Script 11 using blavaan
-#          Full Bayesian SEM with latent variables and posterior inference
-#
-# This addresses the "real Bayesian" requirement by:
-#   - Using MCMC sampling for latent factor models
-#   - Providing posterior distributions (not just point estimates)
-#   - Allowing for Bayesian model comparison
-#
-# Structure:
-#   PART 1: Full Measurement Model CFA (all latent constructs)
-#   PART 2: DAG 1 - Traditional SDT (RAI → Meaning)
-#   PART 3: DAG 2 - Your Hypothesis (Autonomous → Meaning, Controlled = 0)
-#   PART 4: DAG 3 - Dual Pathway (Both AUTO and CTRL)
-#   PART 5: Bayesian Path Decomposition (Mediation Analysis)
-#   PART 6: Model Comparison
-#
-# Uses the same goal-level parcelling approach as Script 11 (proven good fit)
-#
-################################################################################
 
 # library(haven) # Not needed for CSV
 library(dplyr)
