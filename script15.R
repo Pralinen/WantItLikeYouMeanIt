@@ -1,15 +1,7 @@
 # =============================================================================
 # Script 15: Interaction Analysis (Autonomous x Controlled)
 # =============================================================================
-#
-# Purpose: Test whether the effect of autonomous motivation on meaning depends
-#          on the level of controlled motivation (external pressure).
-#
-# Hypothesis (H3): The positive effect of autonomous motivation on meaning will
-#                  remain robust regardless of the level of controlled motivation
-#                  (non-significant interaction).
-#
-# =============================================================================
+
 
 cat("\n")
 cat("=============================================================================\n")
