@@ -2,19 +2,6 @@
 # MASTER SCRIPT: Run ALL 10 Analyses (Scripts 01-10)
 # Author: Liam Le Guellaff Pallin
 # Date: 2025-11-20
-#
-# Purpose:
-#   Runs Scripts 01-10 on the combined dataset (N = 437)
-#
-# Features:
-#   - Error handling: keeps running if one analysis fails
-#   - Progress tracking: saves progress after each script
-#   - Detailed error log
-#   - Time tracking per script
-#
-# USAGE:
-#   Rscript script1-10.R
-#
 ################################################################################
 
 # library(haven) # Not needed for CSV
