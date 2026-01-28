@@ -1,27 +1,7 @@
 ################################################################################
 # SCRIPT 11: LATENT CONSTRUCT MODELING
 ################################################################################
-#
-# Purpose: Supplement the observed-variable analyses (Scripts 02-10) with
-#          latent variable models that account for measurement error
-#
-# Structure:
-#   PART 1: Confirmatory Factor Analysis (CFA) - Measurement Models
-#   PART 2: Latent Structural Models - DAG Comparison
-#   PART 3: Latent Path Decomposition Analysis
-#
-# Theoretical Framework:
-#   - Judea Pearl's causal inference (do-calculus)
-#   - Self-Determination Theory (SDT) motivation continuum
-#   - Your DAG 2 hypothesis: Autonomous → Meaning (Controlled = 0)
-#
-# GSC Item Structure (verified from data):
-#   GSC#_1 = External regulation (CONTROLLED) - "somebody else wants you to"
-#   GSC#_2 = Identified regulation (AUTONOMOUS) - "you really believe it's important"
-#   GSC#_3 = Introjected regulation (CONTROLLED) - "feel ashamed, guilty, anxious"
-#   GSC#_4 = Intrinsic regulation (AUTONOMOUS) - "enjoyment or stimulation"
-#
-################################################################################
+
 
 # library(haven) # Not needed for CSV
 library(dplyr)
