@@ -1,23 +1,7 @@
 ################################################################################
 # SCRIPT 14: BIDIRECTIONAL TEST - MIL ↔ DEP
 ################################################################################
-#
-# Purpose: Test the final piece of the IEA dual-process model
-#
-# Question: Is depression just the "opposite" of meaning (same system)?
-#           Or are they structurally distinct (two separate signals)?
-#
-# Prediction from IEA Framework:
-#   - DEP → MIL should be HUGE (distress kills coherence signal)
-#   - MIL → DEP should be WEAK or ZERO (meaning doesn't "cause" system breakdown)
-#
-# If confirmed: Depression is the error accumulator, Meaning is the direction vector
-#               Two distinct subsystems, not mirror images
-#
-# Method: Bayesian SEM with cross-lagged-style paths (but cross-sectional)
-#         We test BOTH directions to see asymmetry
-#
-################################################################################
+
 
 # library(haven) # Not needed for CSV
 library(dplyr)
