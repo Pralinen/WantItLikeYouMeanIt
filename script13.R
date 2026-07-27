@@ -8,6 +8,20 @@ library(dplyr)
 library(lavaan)
 library(blavaan)
 
+# Helper: get full parameter table with CIs from blavaan
+blavaan_params <- function(fit) {
+  pt <- parTable(fit)
+  invisible(capture.output(sm <- summary(fit)))
+  cn <- trimws(colnames(sm))
+  lo_idx <- which(cn == "pi.lower")
+  hi_idx <- which(cn == "pi.upper")
+  if (length(lo_idx) > 0 && length(hi_idx) > 0) {
+    pt$pi.lower <- as.numeric(sm[, lo_idx])
+    pt$pi.upper <- as.numeric(sm[, hi_idx])
+  }
+  return(pt)
+}
+
 cat("================================================================================\n")
 cat("SCRIPT 13: IEA FRAMEWORK - DISTRESS MEDIATION MODEL\n")
 cat("================================================================================\n")
@@ -147,7 +161,7 @@ if (!is.null(bsem_iea)) {
   cat("================================================================================\n\n")
 
   # Get parameter estimates
-  params <- parameterEstimates(bsem_iea)
+  params <- blavaan_params(bsem_iea)
 
   # Determine column names (blavaan uses different names)
   est_col <- ifelse("Estimate" %in% names(params), "Estimate", "est")
