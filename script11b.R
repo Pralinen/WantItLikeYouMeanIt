@@ -25,6 +25,22 @@ get_param_est <- function(params, col = "est") {
   return(NA)
 }
 
+# Helper: extract full parameter table with CIs from blavaan
+# (parameterEstimates() does not return pi.lower/pi.upper for blavaan objects,
+#  so we merge parTable() with summary() to get posterior credible intervals)
+blavaan_params <- function(fit) {
+  pt <- parTable(fit)
+  invisible(capture.output(sm <- summary(fit)))
+  cn <- trimws(colnames(sm))
+  lo_idx <- which(cn == "pi.lower")
+  hi_idx <- which(cn == "pi.upper")
+  if (length(lo_idx) > 0 && length(hi_idx) > 0) {
+    pt$pi.lower <- as.numeric(sm[, lo_idx])
+    pt$pi.upper <- as.numeric(sm[, hi_idx])
+  }
+  return(pt)
+}
+
 cat("================================================================================\n")
 cat("SCRIPT 11b: BAYESIAN LATENT CONSTRUCT MODELING (blavaan)\n")
 cat("================================================================================\n\n")
@@ -51,6 +67,10 @@ cat("MCMC Settings: Chains =", n_chains, ", Burnin =", n_burnin, ", Samples =", 
 
 cat("Loading Combined dataset...\n")
 combined <- read.csv("dataset.csv")
+
+# Compute GSC (Goal Self-Concordance) = Autonomous - Controlled
+combined$GSC <- combined$Autonomous - combined$Controlled
+
 cat("  N =", nrow(combined), "\n\n")
 
 ################################################################################
@@ -124,7 +144,7 @@ if (!is.null(bcfa_full)) {
 
   # Extract factor correlations
   cat("\nFactor Correlations (Posterior Estimates):\n")
-  params <- parameterEstimates(bcfa_full)
+  params <- blavaan_params(bcfa_full)
   cors <- params[params$op == "~~" & params$lhs != params$rhs, ]
   if (nrow(cors) > 0) {
     for (i in 1:nrow(cors)) {
@@ -139,11 +159,11 @@ if (!is.null(bcfa_full)) {
 }
 
 ################################################################################
-# PART 2: DAG 1 - Traditional SDT (RAI → Meaning)
+# PART 2: DAG 1 - Traditional SDT (GSC → Meaning)
 ################################################################################
 
 cat("================================================================================\n")
-cat("PART 2: BAYESIAN SEM - DAG 1 (Traditional SDT: RAI → Meaning)\n")
+cat("PART 2: BAYESIAN SEM - DAG 1 (Traditional SDT: GSC → Meaning)\n")
 cat("================================================================================\n\n")
 
 dag1_model <- paste0('
@@ -151,11 +171,11 @@ dag1_model <- paste0('
   MIL =~ MIL1 + MIL2 + MIL3 + MIL4
   DEP =~ ', paste(cesd_items, collapse = " + "), '
 
-  # Structural Model - RAI only (balance score)
-  MIL ~ RAI + DEP + Age + Sex
+  # Structural Model - GSC only (balance score)
+  MIL ~ GSC + DEP + Age + Sex
 ')
 
-cat("Fitting DAG 1: RAI (balance) predicts Meaning...\n\n")
+cat("Fitting DAG 1: GSC (balance) predicts Meaning...\n\n")
 
 bsem_dag1 <- tryCatch({
   bsem(dag1_model, data = combined,
@@ -170,19 +190,19 @@ if (!is.null(bsem_dag1)) {
   cat("\n--- Bayesian SEM Results: DAG 1 ---\n\n")
   print(summary(bsem_dag1))
 
-  # Extract RAI effect
-  dag1_params <- parameterEstimates(bsem_dag1)
-  rai_effect <- dag1_params[dag1_params$lhs == "MIL" & dag1_params$rhs == "RAI", ]
-  rai_est <- get_param_est(rai_effect, "est")
-  rai_lo <- get_param_est(rai_effect, "ci.lower")
-  rai_hi <- get_param_est(rai_effect, "ci.upper")
+  # Extract GSC effect
+  dag1_params <- blavaan_params(bsem_dag1)
+  gsc_effect <- dag1_params[dag1_params$lhs == "MIL" & dag1_params$rhs == "GSC", ]
+  gsc_est <- get_param_est(gsc_effect, "est")
+  gsc_lo <- get_param_est(gsc_effect, "ci.lower")
+  gsc_hi <- get_param_est(gsc_effect, "ci.upper")
 
-  cat("\nKEY RESULT - RAI → Meaning:\n")
-  cat("  Posterior Mean:", round(rai_est, 3), "\n")
-  cat("  95% Credible Interval: [", round(rai_lo, 3), ",", round(rai_hi, 3), "]\n")
-  if (!is.na(rai_lo) && rai_lo > 0) {
+  cat("\nKEY RESULT - GSC → Meaning:\n")
+  cat("  Posterior Mean:", round(gsc_est, 3), "\n")
+  cat("  95% Credible Interval: [", round(gsc_lo, 3), ",", round(gsc_hi, 3), "]\n")
+  if (!is.na(gsc_lo) && gsc_lo > 0) {
     cat("  → CREDIBLY POSITIVE\n")
-  } else if (!is.na(rai_hi) && rai_hi < 0) {
+  } else if (!is.na(gsc_hi) && gsc_hi < 0) {
     cat("  → CREDIBLY NEGATIVE\n")
   } else {
     cat("  → INCLUDES 0\n")
@@ -228,7 +248,7 @@ if (!is.null(bsem_dag2)) {
   print(summary(bsem_dag2))
 
   # Extract AUTO effect
-  dag2_params <- parameterEstimates(bsem_dag2)
+  dag2_params <- blavaan_params(bsem_dag2)
   auto_effect <- dag2_params[dag2_params$lhs == "MIL" & dag2_params$rhs == "AUTO", ]
   auto_est <- get_param_est(auto_effect, "est")
   auto_lo <- get_param_est(auto_effect, "ci.lower")
@@ -284,7 +304,7 @@ if (!is.null(bsem_dag3)) {
   print(summary(bsem_dag3))
 
   # Extract effects
-  dag3_params <- parameterEstimates(bsem_dag3)
+  dag3_params <- blavaan_params(bsem_dag3)
   auto_effect <- dag3_params[dag3_params$lhs == "MIL" & dag3_params$rhs == "AUTO", ]
   ctrl_effect <- dag3_params[dag3_params$lhs == "MIL" & dag3_params$rhs == "CTRL", ]
 
@@ -326,7 +346,7 @@ if (!is.null(bsem_dag3)) {
 cat("================================================================================\n")
 cat("PART 5: BAYESIAN PATH DECOMPOSITION (Mediation Analysis)\n")
 cat("================================================================================\n\n")
-cat("Testing: Does Autonomous mediate the RAI → Meaning relationship?\n\n")
+cat("Testing: Does Autonomous mediate the GSC → Meaning relationship?\n\n")
 
 path_model <- paste0('
   # Measurement Model
@@ -335,12 +355,12 @@ path_model <- paste0('
   DEP =~ ', paste(cesd_items, collapse = " + "), '
 
   # Structural Model (Causal Paths)
-  # Path a: RAI → Autonomous
-  AUTO ~ a*RAI + DEP + Age + Sex
+  # Path a: GSC → Autonomous
+  AUTO ~ a*GSC + DEP + Age + Sex
 
-  # Path b: Autonomous → Meaning (controlling for RAI)
-  # Path c_prime: Direct effect of RAI on Meaning
-  MIL ~ b*AUTO + c_prime*RAI + DEP + Age + Sex
+  # Path b: Autonomous → Meaning (controlling for GSC)
+  # Path c_prime: Direct effect of GSC on Meaning
+  MIL ~ b*AUTO + c_prime*GSC + DEP + Age + Sex
 
   # Effect Decomposition
   indirect := a * b
@@ -364,7 +384,7 @@ if (!is.null(bsem_path)) {
   print(summary(bsem_path))
 
   # Extract path coefficients
-  path_params <- parameterEstimates(bsem_path)
+  path_params <- blavaan_params(bsem_path)
 
   a_path <- path_params[path_params$label == "a", ]
   b_path <- path_params[path_params$label == "b", ]
@@ -383,7 +403,7 @@ if (!is.null(bsem_path)) {
   cat("CAUSAL PATH ESTIMATES (Posterior)\n")
   cat("========================================\n\n")
 
-  cat("Path a (RAI → AUTO):\n")
+  cat("Path a (GSC → AUTO):\n")
   cat("  Posterior Mean:", round(a_est, 3), "\n")
   cat("  95% CI: [", round(a_lo, 3), ",", round(a_hi, 3), "]\n\n")
 
@@ -430,12 +450,12 @@ if (!is.null(bsem_path)) {
   cat("========================================\n")
   if (ind_credible && !dir_credible) {
     cat("FULL MEDIATION SUPPORTED!\n")
-    cat("→ RAI's effect on Meaning operates entirely through Autonomous motivation\n")
+    cat("→ GSC's effect on Meaning operates entirely through Autonomous motivation\n")
     cat("→ This supports your DAG 2 hypothesis\n")
   } else if (ind_credible) {
     cat("PARTIAL MEDIATION\n")
-    cat("→ Autonomous partially mediates RAI → Meaning\n")
-    cat("→ But RAI retains some direct effect\n")
+    cat("→ Autonomous partially mediates GSC → Meaning\n")
+    cat("→ But GSC retains some direct effect\n")
   } else {
     cat("NO MEDIATION\n")
     cat("→ Indirect effect not credibly different from 0\n")
@@ -459,15 +479,15 @@ cat("--------------------------\n\n")
 
 # Collect results if available
 if (!is.null(bsem_dag1)) {
-  dag1_params <- parameterEstimates(bsem_dag1)
-  rai_eff <- dag1_params[dag1_params$lhs == "MIL" & dag1_params$rhs == "RAI", ]
-  rai_e <- get_param_est(rai_eff, "est"); rai_l <- get_param_est(rai_eff, "ci.lower"); rai_h <- get_param_est(rai_eff, "ci.upper")
-  cat("DAG 1 (Traditional SDT - RAI only):\n")
-  cat("  RAI → MIL: β =", round(rai_e, 3), "[", round(rai_l, 3), ",", round(rai_h, 3), "]\n\n")
+  dag1_params <- blavaan_params(bsem_dag1)
+  gsc_eff <- dag1_params[dag1_params$lhs == "MIL" & dag1_params$rhs == "GSC", ]
+  gsc_e <- get_param_est(gsc_eff, "est"); gsc_l <- get_param_est(gsc_eff, "ci.lower"); gsc_h <- get_param_est(gsc_eff, "ci.upper")
+  cat("DAG 1 (Traditional SDT - GSC only):\n")
+  cat("  GSC → MIL: β =", round(gsc_e, 3), "[", round(gsc_l, 3), ",", round(gsc_h, 3), "]\n\n")
 }
 
 if (!is.null(bsem_dag2)) {
-  dag2_params <- parameterEstimates(bsem_dag2)
+  dag2_params <- blavaan_params(bsem_dag2)
   auto_eff <- dag2_params[dag2_params$lhs == "MIL" & dag2_params$rhs == "AUTO", ]
   auto_e <- get_param_est(auto_eff, "est"); auto_l <- get_param_est(auto_eff, "ci.lower"); auto_h <- get_param_est(auto_eff, "ci.upper")
   cat("DAG 2 (YOUR HYPOTHESIS - Autonomous only):\n")
@@ -476,7 +496,7 @@ if (!is.null(bsem_dag2)) {
 }
 
 if (!is.null(bsem_dag3)) {
-  dag3_params <- parameterEstimates(bsem_dag3)
+  dag3_params <- blavaan_params(bsem_dag3)
   auto_eff <- dag3_params[dag3_params$lhs == "MIL" & dag3_params$rhs == "AUTO", ]
   ctrl_eff <- dag3_params[dag3_params$lhs == "MIL" & dag3_params$rhs == "CTRL", ]
   auto_e <- get_param_est(auto_eff, "est"); auto_l <- get_param_est(auto_eff, "ci.lower"); auto_h <- get_param_est(auto_eff, "ci.upper")
