@@ -31,6 +31,11 @@ study1 <- read.csv("dataset.csv")
 study2 <- read.csv("dataset.csv")
 combined <- read.csv("dataset.csv")  # With GSC items
 
+# Compute GSC (Goal Self-Concordance) = Autonomous - Controlled
+study1$GSC <- study1$Autonomous - study1$Controlled
+study2$GSC <- study2$Autonomous - study2$Controlled
+combined$GSC <- combined$Autonomous - combined$Controlled
+
 cat("  Study 1: N =", nrow(study1), "\n")
 cat("  Study 2: N =", nrow(study2), "\n")
 cat("  Combined: N =", nrow(combined), "\n\n")
@@ -311,10 +316,10 @@ run_latent_dag <- function(data, dataset_name) {
   }
 
   # ============================================================================
-  # DAG 1: Traditional SDT (RAI → Meaning)
-  # Uses observed RAI since it's a computed balance score
+  # DAG 1: Traditional SDT (GSC → Meaning)
+  # Uses observed GSC since it's a computed balance score
   # ============================================================================
-  cat("DAG 1: Traditional SDT - RAI (Balance) → Meaning\n")
+  cat("DAG 1: Traditional SDT - GSC (Balance) → Meaning\n")
 
   dag1_model <- paste0('
     # Measurement Model
@@ -322,7 +327,7 @@ run_latent_dag <- function(data, dataset_name) {
     DEP =~ ', paste(cesd_items_present, collapse = " + "), '
 
     # Structural Model
-    MIL ~ RAI + DEP + Age + Sex
+    MIL ~ GSC + DEP + Age + Sex
   ')
 
   dag1_fit <- tryCatch({
@@ -336,10 +341,10 @@ run_latent_dag <- function(data, dataset_name) {
     dag1_fitmeasures <- fitMeasures(dag1_fit, c("chisq", "df", "cfi", "rmsea", "aic", "bic"))
     dag1_params <- parameterEstimates(dag1_fit, standardized = TRUE)
 
-    rai_effect <- dag1_params[dag1_params$lhs == "MIL" & dag1_params$rhs == "RAI", ]
+    gsc_effect <- dag1_params[dag1_params$lhs == "MIL" & dag1_params$rhs == "GSC", ]
 
-    cat("   RAI → MIL: β =", round(rai_effect$std.all, 3),
-        "[", round(rai_effect$ci.lower, 3), ",", round(rai_effect$ci.upper, 3), "]\n")
+    cat("   GSC → MIL: β =", round(gsc_effect$std.all, 3),
+        "[", round(gsc_effect$ci.lower, 3), ",", round(gsc_effect$ci.upper, 3), "]\n")
     cat("   AIC:", round(dag1_fitmeasures["aic"], 1), "\n")
     cat("   BIC:", round(dag1_fitmeasures["bic"], 1), "\n\n")
   }
@@ -477,7 +482,7 @@ dag_combined <- run_latent_dag(combined, "Combined")
 cat("\n================================================================================\n")
 cat("PART 3: LATENT PATH DECOMPOSITION ANALYSIS\n")
 cat("================================================================================\n")
-cat("Testing: Does Autonomous mediate the RAI → Meaning relationship?\n\n")
+cat("Testing: Does Autonomous mediate the GSC → Meaning relationship?\n\n")
 
 run_latent_path_decomposition <- function(data, dataset_name) {
 
@@ -517,12 +522,12 @@ run_latent_path_decomposition <- function(data, dataset_name) {
     # STRUCTURAL MODEL (Causal Paths)
     # ================================================
 
-    # Path a: RAI → Autonomous
-    AUTO ~ a*RAI + DEP + Age + Sex
+    # Path a: GSC → Autonomous
+    AUTO ~ a*GSC + DEP + Age + Sex
 
-    # Path b: Autonomous → Meaning (controlling for RAI)
-    # Path c_prime: Direct effect of RAI on Meaning
-    MIL ~ b*AUTO + c_prime*RAI + DEP + Age + Sex
+    # Path b: Autonomous → Meaning (controlling for GSC)
+    # Path c_prime: Direct effect of GSC on Meaning
+    MIL ~ b*AUTO + c_prime*GSC + DEP + Age + Sex
 
     # ================================================
     # CAUSAL EFFECT DECOMPOSITION
@@ -531,7 +536,7 @@ run_latent_path_decomposition <- function(data, dataset_name) {
     # Indirect effect (mediated through Autonomous)
     indirect := a * b
 
-    # Direct effect (RAI → Meaning, not through Autonomous)
+    # Direct effect (GSC → Meaning, not through Autonomous)
     direct := c_prime
 
     # Total effect
@@ -570,7 +575,7 @@ run_latent_path_decomposition <- function(data, dataset_name) {
 
     cat("CAUSAL PATH ESTIMATES:\n")
     cat("----------------------\n")
-    cat("Path a (RAI → AUTO):     ", round(a_path$est, 3),
+    cat("Path a (GSC → AUTO):     ", round(a_path$est, 3),
         " [", round(a_path$ci.lower, 3), ", ", round(a_path$ci.upper, 3), "]\n", sep = "")
     cat("Path b (AUTO → MIL):     ", round(b_path$est, 3),
         " [", round(b_path$ci.lower, 3), ", ", round(b_path$ci.upper, 3), "]\n", sep = "")
@@ -594,16 +599,16 @@ run_latent_path_decomposition <- function(data, dataset_name) {
 
     if (indirect$ci.lower > 0 || indirect$ci.upper < 0) {
       cat("Indirect effect is SIGNIFICANT\n")
-      cat("→ Autonomous DOES mediate the RAI → Meaning relationship\n")
+      cat("→ Autonomous DOES mediate the GSC → Meaning relationship\n")
     } else {
       cat("Indirect effect includes 0 (not significant)\n")
     }
 
     if (direct$ci.lower <= 0 && direct$ci.upper >= 0) {
-      cat("→ Direct effect of RAI is NOT significant when controlling for Autonomous\n")
+      cat("→ Direct effect of GSC is NOT significant when controlling for Autonomous\n")
       cat("→ This supports FULL MEDIATION (and your DAG 2 hypothesis)\n")
     } else {
-      cat("→ Direct effect of RAI remains significant\n")
+      cat("→ Direct effect of GSC remains significant\n")
       cat("→ This suggests PARTIAL MEDIATION\n")
     }
     cat("\n")
