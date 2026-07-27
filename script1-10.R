@@ -105,8 +105,8 @@ run_script_02 <- function(dataset_info) {
 
   # Load and prepare data
   data <- read.csv(dataset_info$path) %>%
-    mutate(Meaning = MILjudgements, Depression = DEP_Corrected) %>%
-    filter(complete.cases(Autonomous, RAI, Meaning, Depression, Age, Sex))
+    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, GSC = Autonomous - Controlled) %>%
+    filter(complete.cases(Autonomous, GSC, Meaning, Depression, Anxiety, Age, Sex))
 
   cat("Sample size: N =", nrow(data), "\n\n")
 
@@ -114,7 +114,7 @@ run_script_02 <- function(dataset_info) {
   # MODEL 0: CONTROLS ONLY (BASELINE)
   # ============================================================================
   cat("MODEL 0: Controls Only (Baseline)\n")
-  m_controls <- lm(Meaning ~ Depression + Age + Sex, data = data)
+  m_controls <- lm(Meaning ~ Depression + Anxiety + Age + Sex, data = data)
   r2_controls <- summary(m_controls)$r.squared
   cat("  R² =", round(r2_controls, 4), "\n\n")
 
@@ -122,7 +122,7 @@ run_script_02 <- function(dataset_info) {
   # MODEL 1: AUTONOMOUS + CONTROLS
   # ============================================================================
   cat("MODEL 1: Autonomous + Controls\n")
-  m1 <- lm(Meaning ~ Autonomous + Depression + Age + Sex, data = data)
+  m1 <- lm(Meaning ~ Autonomous + Depression + Anxiety + Age + Sex, data = data)
   sum1 <- summary(m1)
   r2_auto <- sum1$r.squared
   delta_r2_auto <- r2_auto - r2_controls
@@ -144,35 +144,35 @@ run_script_02 <- function(dataset_info) {
       ", t =", round(auto_t, 2), ", p =", format.pval(auto_p, digits = 3), "\n\n")
 
   # ============================================================================
-  # MODEL 2: RAI + CONTROLS
+  # MODEL 2: GSC + CONTROLS
   # ============================================================================
-  cat("MODEL 2: RAI + Controls\n")
-  m2 <- lm(Meaning ~ RAI + Depression + Age + Sex, data = data)
+  cat("MODEL 2: GSC + Controls\n")
+  m2 <- lm(Meaning ~ GSC + Depression + Anxiety + Age + Sex, data = data)
   sum2 <- summary(m2)
-  r2_rai <- sum2$r.squared
-  delta_r2_rai <- r2_rai - r2_controls
+  r2_gsc <- sum2$r.squared
+  delta_r2_gsc <- r2_gsc - r2_controls
 
-  cat("  R² =", round(r2_rai, 4), "\n")
-  cat("  ΔR² from controls =", round(delta_r2_rai, 4),
-      "(", round(100 * delta_r2_rai, 2), "%)\n")
+  cat("  R² =", round(r2_gsc, 4), "\n")
+  cat("  ΔR² from controls =", round(delta_r2_gsc, 4),
+      "(", round(100 * delta_r2_gsc, 2), "%)\n")
 
   # F-change test
-  f_change_rai <- anova(m_controls, m2)
-  cat("  F-change =", round(f_change_rai$F[2], 2),
-      ", p =", format.pval(f_change_rai$`Pr(>F)`[2], digits = 3), "\n")
+  f_change_gsc <- anova(m_controls, m2)
+  cat("  F-change =", round(f_change_gsc$F[2], 2),
+      ", p =", format.pval(f_change_gsc$`Pr(>F)`[2], digits = 3), "\n")
 
-  rai_b <- coef(m2)["RAI"]
-  rai_se <- sum2$coefficients["RAI", "Std. Error"]
-  rai_t <- sum2$coefficients["RAI", "t value"]
-  rai_p <- sum2$coefficients["RAI", "Pr(>|t|)"]
-  cat("  RAI: b =", round(rai_b, 3), ", SE =", round(rai_se, 3),
-      ", t =", round(rai_t, 2), ", p =", format.pval(rai_p, digits = 3), "\n\n")
+  gsc_b <- coef(m2)["GSC"]
+  gsc_se <- sum2$coefficients["GSC", "Std. Error"]
+  gsc_t <- sum2$coefficients["GSC", "t value"]
+  gsc_p <- sum2$coefficients["GSC", "Pr(>|t|)"]
+  cat("  GSC: b =", round(gsc_b, 3), ", SE =", round(gsc_se, 3),
+      ", t =", round(gsc_t, 2), ", p =", format.pval(gsc_p, digits = 3), "\n\n")
 
   # ============================================================================
   # MODEL 3: BOTH PREDICTORS (CRITICAL TEST)
   # ============================================================================
-  cat("MODEL 3: Both Autonomous + RAI + Controls\n")
-  m3 <- lm(Meaning ~ Autonomous + RAI + Depression + Age + Sex, data = data)
+  cat("MODEL 3: Both Autonomous + GSC + Controls\n")
+  m3 <- lm(Meaning ~ Autonomous + GSC + Depression + Anxiety + Age + Sex, data = data)
   sum3 <- summary(m3)
   r2_both <- sum3$r.squared
 
@@ -186,13 +186,13 @@ run_script_02 <- function(dataset_info) {
       ", t =", round(auto_t3, 2), ", p =", format.pval(auto_p3, digits = 3))
   if (auto_p3 < 0.05) cat(" ✓ Significant\n") else cat(" ~ Not significant\n")
 
-  rai_b3 <- coef(m3)["RAI"]
-  rai_se3 <- sum3$coefficients["RAI", "Std. Error"]
-  rai_t3 <- sum3$coefficients["RAI", "t value"]
-  rai_p3 <- sum3$coefficients["RAI", "Pr(>|t|)"]
-  cat("  RAI: b =", round(rai_b3, 3), ", SE =", round(rai_se3, 3),
-      ", t =", round(rai_t3, 2), ", p =", format.pval(rai_p3, digits = 3))
-  if (rai_p3 >= 0.05) cat(" ✓ Not significant (H1 prediction)\n") else cat(" ⚠ Significant\n")
+  gsc_b3 <- coef(m3)["GSC"]
+  gsc_se3 <- sum3$coefficients["GSC", "Std. Error"]
+  gsc_t3 <- sum3$coefficients["GSC", "t value"]
+  gsc_p3 <- sum3$coefficients["GSC", "Pr(>|t|)"]
+  cat("  GSC: b =", round(gsc_b3, 3), ", SE =", round(gsc_se3, 3),
+      ", t =", round(gsc_t3, 2), ", p =", format.pval(gsc_p3, digits = 3))
+  if (gsc_p3 >= 0.05) cat(" ✓ Not significant (H1 prediction)\n") else cat(" ⚠ Significant\n")
   cat("\n")
 
   # ============================================================================
@@ -200,26 +200,26 @@ run_script_02 <- function(dataset_info) {
   # ============================================================================
   cat("INCREMENTAL VARIANCE ANALYSIS:\n")
 
-  # Test 1: Does RAI add beyond Autonomous?
-  delta_r2_rai_beyond_auto <- r2_both - r2_auto
-  f_test_rai_beyond <- anova(m1, m3)
-  cat("  1. RAI beyond Autonomous:\n")
-  cat("     ΔR² =", round(delta_r2_rai_beyond_auto, 4),
-      "(", round(100 * delta_r2_rai_beyond_auto, 2), "%)\n")
-  cat("     F =", round(f_test_rai_beyond$F[2], 2),
-      ", p =", format.pval(f_test_rai_beyond$`Pr(>F)`[2], digits = 3))
-  if (f_test_rai_beyond$`Pr(>F)`[2] >= 0.05) {
-    cat(" ✓ RAI adds NO variance (H1c supported)\n\n")
+  # Test 1: Does GSC add beyond Autonomous?
+  delta_r2_gsc_beyond_auto <- r2_both - r2_auto
+  f_test_gsc_beyond <- anova(m1, m3)
+  cat("  1. GSC beyond Autonomous:\n")
+  cat("     ΔR² =", round(delta_r2_gsc_beyond_auto, 4),
+      "(", round(100 * delta_r2_gsc_beyond_auto, 2), "%)\n")
+  cat("     F =", round(f_test_gsc_beyond$F[2], 2),
+      ", p =", format.pval(f_test_gsc_beyond$`Pr(>F)`[2], digits = 3))
+  if (f_test_gsc_beyond$`Pr(>F)`[2] >= 0.05) {
+    cat(" ✓ GSC adds NO variance (H1c supported)\n\n")
   } else {
-    cat(" ⚠ RAI adds variance (challenges H1c)\n\n")
+    cat(" ⚠ GSC adds variance (challenges H1c)\n\n")
   }
 
-  # Test 2: Does Autonomous add beyond RAI?
-  delta_r2_auto_beyond_rai <- r2_both - r2_rai
+  # Test 2: Does Autonomous add beyond GSC?
+  delta_r2_auto_beyond_gsc <- r2_both - r2_gsc
   f_test_auto_beyond <- anova(m2, m3)
-  cat("  2. Autonomous beyond RAI:\n")
-  cat("     ΔR² =", round(delta_r2_auto_beyond_rai, 4),
-      "(", round(100 * delta_r2_auto_beyond_rai, 2), "%)\n")
+  cat("  2. Autonomous beyond GSC:\n")
+  cat("     ΔR² =", round(delta_r2_auto_beyond_gsc, 4),
+      "(", round(100 * delta_r2_auto_beyond_gsc, 2), "%)\n")
   cat("     F =", round(f_test_auto_beyond$F[2], 2),
       ", p =", format.pval(f_test_auto_beyond$`Pr(>F)`[2], digits = 3))
   if (f_test_auto_beyond$`Pr(>F)`[2] < 0.05) {
@@ -237,36 +237,36 @@ run_script_02 <- function(dataset_info) {
   spcor_auto <- spcor.test(
     x = data$Autonomous,
     y = data$Meaning,
-    z = data[, c("RAI", "Depression", "Anxiety", "Age", "Sex")]
+    z = data[, c("GSC", "Depression", "Anxiety", "Age", "Sex")]
   )
   sr2_auto <- spcor_auto$estimate^2
   p_auto_sp <- spcor_auto$p.value
 
-  cat("  Autonomous (controlling RAI + covariates):\n")
+  cat("  Autonomous (controlling GSC + covariates):\n")
   cat("    sr² =", round(sr2_auto, 4),
       "(", round(100 * sr2_auto, 2), "% unique variance)\n")
   cat("    p =", format.pval(p_auto_sp, digits = 3), "\n\n")
 
-  # RAI unique variance
-  spcor_rai <- spcor.test(
-    x = data$RAI,
+  # GSC unique variance
+  spcor_gsc <- spcor.test(
+    x = data$GSC,
     y = data$Meaning,
     z = data[, c("Autonomous", "Depression", "Anxiety", "Age", "Sex")]
   )
-  sr2_rai <- spcor_rai$estimate^2
-  p_rai_sp <- spcor_rai$p.value
+  sr2_gsc <- spcor_gsc$estimate^2
+  p_gsc_sp <- spcor_gsc$p.value
 
-  cat("  RAI (controlling Autonomous + covariates):\n")
-  cat("    sr² =", round(sr2_rai, 4),
-      "(", round(100 * sr2_rai, 2), "% unique variance)\n")
-  cat("    p =", format.pval(p_rai_sp, digits = 3), "\n")
+  cat("  GSC (controlling Autonomous + covariates):\n")
+  cat("    sr² =", round(sr2_gsc, 4),
+      "(", round(100 * sr2_gsc, 2), "% unique variance)\n")
+  cat("    p =", format.pval(p_gsc_sp, digits = 3), "\n")
 
-  if (sr2_rai > 0.0001) {
-    ratio <- sr2_auto / sr2_rai
+  if (sr2_gsc > 0.0001) {
+    ratio <- sr2_auto / sr2_gsc
     cat("    → Autonomous explains", round(ratio, 1),
-        "times more unique variance than RAI\n\n")
+        "times more unique variance than GSC\n\n")
   } else {
-    cat("    → RAI explains essentially 0% unique variance\n\n")
+    cat("    → GSC explains essentially 0% unique variance\n\n")
   }
 
   # ============================================================================
@@ -275,32 +275,32 @@ run_script_02 <- function(dataset_info) {
   cat("MULTICOLLINEARITY:\n")
 
   r2_auto_on_others <- summary(lm(
-    Autonomous ~ RAI + Depression + Anxiety + Age + Sex, data = data
+    Autonomous ~ GSC + Depression + Anxiety + Age + Sex, data = data
   ))$r.squared
   vif_auto <- 1 / (1 - r2_auto_on_others)
 
-  r2_rai_on_others <- summary(lm(
-    RAI ~ Autonomous + Depression + Anxiety + Age + Sex, data = data
+  r2_gsc_on_others <- summary(lm(
+    GSC ~ Autonomous + Depression + Anxiety + Age + Sex, data = data
   ))$r.squared
-  vif_rai <- 1 / (1 - r2_rai_on_others)
+  vif_gsc <- 1 / (1 - r2_gsc_on_others)
 
   cat("  Autonomous VIF =", round(vif_auto, 2))
   if (vif_auto < 5) cat(" ✓\n") else if (vif_auto < 10) cat(" ~ Moderate\n") else cat(" ⚠ High\n")
 
-  cat("  RAI VIF =", round(vif_rai, 2))
-  if (vif_rai < 5) cat(" ✓\n\n") else if (vif_rai < 10) cat(" ~ Moderate\n\n") else cat(" ⚠ High\n\n")
+  cat("  GSC VIF =", round(vif_gsc, 2))
+  if (vif_gsc < 5) cat(" ✓\n\n") else if (vif_gsc < 10) cat(" ~ Moderate\n\n") else cat(" ⚠ High\n\n")
 
   # ============================================================================
   # H1 DECISION
   # ============================================================================
   cat("H1 HYPOTHESIS TEST SUMMARY:\n")
   h1a <- auto_p3 < 0.05
-  h1b <- rai_p3 >= 0.05
-  h1c <- f_test_rai_beyond$`Pr(>F)`[2] >= 0.05
+  h1b <- gsc_p3 >= 0.05
+  h1c <- f_test_gsc_beyond$`Pr(>F)`[2] >= 0.05
 
   cat("  H1a (Autonomous remains significant): ", if(h1a) "✓ SUPPORTED\n" else "✗ NOT SUPPORTED\n")
-  cat("  H1b (RAI becomes non-significant): ", if(h1b) "✓ SUPPORTED\n" else "✗ NOT SUPPORTED\n")
-  cat("  H1c (RAI adds no incremental variance): ", if(h1c) "✓ SUPPORTED\n" else "✗ NOT SUPPORTED\n")
+  cat("  H1b (GSC becomes non-significant): ", if(h1b) "✓ SUPPORTED\n" else "✗ NOT SUPPORTED\n")
+  cat("  H1c (GSC adds no incremental variance): ", if(h1c) "✓ SUPPORTED\n" else "✗ NOT SUPPORTED\n")
 
   if (h1a && h1b && h1c) {
     cat("  → OVERALL H1: ✓ FULLY SUPPORTED\n\n")
@@ -317,26 +317,26 @@ run_script_02 <- function(dataset_info) {
     models = list(
       controls = list(model = m_controls, summary = summary(m_controls), r2 = r2_controls),
       m1_autonomous = list(model = m1, summary = sum1, r2 = r2_auto),
-      m2_rai = list(model = m2, summary = sum2, r2 = r2_rai),
+      m2_gsc = list(model = m2, summary = sum2, r2 = r2_gsc),
       m3_both = list(model = m3, summary = sum3, r2 = r2_both)
     ),
     incremental_variance = list(
       delta_r2_auto = delta_r2_auto,
-      delta_r2_rai = delta_r2_rai,
-      delta_r2_rai_beyond_auto = delta_r2_rai_beyond_auto,
-      delta_r2_auto_beyond_rai = delta_r2_auto_beyond_rai,
-      f_test_rai_beyond = f_test_rai_beyond,
+      delta_r2_gsc = delta_r2_gsc,
+      delta_r2_gsc_beyond_auto = delta_r2_gsc_beyond_auto,
+      delta_r2_auto_beyond_gsc = delta_r2_auto_beyond_gsc,
+      f_test_gsc_beyond = f_test_gsc_beyond,
       f_test_auto_beyond = f_test_auto_beyond
     ),
     semi_partial_correlations = list(
       sr2_auto = sr2_auto,
-      sr2_rai = sr2_rai,
+      sr2_gsc = sr2_gsc,
       p_auto = p_auto_sp,
-      p_rai = p_rai_sp
+      p_gsc = p_gsc_sp
     ),
     multicollinearity = list(
       vif_auto = vif_auto,
-      vif_rai = vif_rai
+      vif_gsc = vif_gsc
     ),
     h1_tests = list(
       h1a = h1a,
@@ -353,32 +353,32 @@ run_script_02 <- function(dataset_info) {
 }
 
 ################################################################################
-# SCRIPT 03: H1 Path Decomposition Analysis - RAI → Autonomous → Meaning
+# SCRIPT 03: H1 Path Decomposition Analysis - GSC → Autonomous → Meaning
 ################################################################################
 #
 # This Path Decomposition Analysis uses structural equation modeling to isolate
-# the predictive pathways. Since RAI is a composite index (Autonomous - Controlled),
-# this analysis demonstrates that the association between RAI and Meaning operates
+# the predictive pathways. Since GSC is a composite index (Autonomous - Controlled),
+# this analysis demonstrates that the association between GSC and Meaning operates
 # primarily through the Autonomous component.
 #
 # The mediation framework allows us to:
-# - Decompose RAI's total effect into direct (c') and indirect (a×b) pathways
-# - Test whether Autonomous mediates the RAI → Meaning relationship
+# - Decompose GSC's total effect into direct (c') and indirect (a×b) pathways
+# - Test whether Autonomous mediates the GSC → Meaning relationship
 # - Isolate variance attributable to each component
 ################################################################################
 
 run_script_03 <- function(dataset_info) {
   data <- read.csv(dataset_info$path) %>%
-    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
-    filter(complete.cases(RAI, Autonomous, Meaning, Depression, Anxiety, Age, Sex))
+    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore, GSC = Autonomous - Controlled) %>%
+    filter(complete.cases(GSC, Autonomous, Meaning, Depression, Anxiety, Age, Sex))
 
-  # Path Decomposition Model: Tests WHY RAI drops out (because Autonomous mediates it)
+  # Path Decomposition Model: Tests WHY GSC drops out (because Autonomous mediates it)
   mediation_model <- '
-    # Path a: RAI → Autonomous
-    Autonomous ~ a*RAI + Depression + Anxiety + Age + Sex
+    # Path a: GSC → Autonomous
+    Autonomous ~ a*GSC + Depression + Anxiety + Age + Sex
 
-    # Path b: Autonomous → Meaning (controlling RAI)
-    Meaning ~ b*Autonomous + c_prime*RAI + Depression + Anxiety + Age + Sex
+    # Path b: Autonomous → Meaning (controlling GSC)
+    Meaning ~ b*Autonomous + c_prime*GSC + Depression + Anxiety + Age + Sex
 
     # Indirect effect (a × b)
     indirect := a * b
@@ -392,7 +392,7 @@ run_script_03 <- function(dataset_info) {
   results <- list(
     dataset = dataset_info$name, n = nrow(data),
     fit = fit, estimates = parameterEstimates(fit),
-    type = "RAI_to_Autonomous_to_Meaning"
+    type = "GSC_to_Autonomous_to_Meaning"
   )
 
   saveRDS(results, file = paste0(base_dir, "/Results/Script03_", dataset_info$name, ".rds"))
@@ -445,8 +445,8 @@ run_script_04 <- function(dataset_info) {
 
   # Load and prepare data
   data <- read.csv(dataset_info$path) %>%
-    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore, RAI) %>%
-    filter(complete.cases(Autonomous, RAI, Meaning, Depression, Anxiety, Age, Sex)) %>%
+    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore, GSC = Autonomous - Controlled) %>%
+    filter(complete.cases(Autonomous, GSC, Meaning, Depression, Anxiety, Age, Sex)) %>%
     mutate(Meaning_ord = ordered(Meaning))
 
   cat("N =", nrow(data), "\n")
@@ -459,7 +459,7 @@ run_script_04 <- function(dataset_info) {
 
   cat("Testing 3 competing ordinal models:\n")
   cat("  Model 1: Autonomous only + controls (DAG 2)\n")
-  cat("  Model 2: RAI only + controls (DAG 1)\n")
+  cat("  Model 2: GSC only + controls (DAG 1)\n")
   cat("  Model 3: Both predictors + controls (DAG 3)\n\n")
 
   # MODEL 1: AUTONOMOUS ONLY
@@ -470,6 +470,7 @@ run_script_04 <- function(dataset_info) {
     data = data, family = cumulative("probit"), prior = priors,
     chains = 4, iter = 3000, warmup = 1500, seed = 42,
     backend = "cmdstanr", cores = 4,
+    init = 0,
     control = list(adapt_delta = 0.95),
     file = paste0(base_dir, "/Models/Script04_Model1_", dataset_info$name),
     silent = 2, refresh = 0
@@ -485,14 +486,15 @@ run_script_04 <- function(dataset_info) {
   loo1 <- loo(fit1)
   cat("  LOO-IC:", round(loo1$estimates["looic", "Estimate"], 1), "\n\n")
 
-  # MODEL 2: RAI ONLY
-  cat("MODEL 2: RAI Only\n")
+  # MODEL 2: GSC ONLY
+  cat("MODEL 2: GSC Only\n")
   start2 <- Sys.time()
   fit2 <- brm(
-    Meaning_ord ~ RAI + Depression + Anxiety + Age + Sex,
+    Meaning_ord ~ GSC + Depression + Anxiety + Age + Sex,
     data = data, family = cumulative("probit"), prior = priors,
     chains = 4, iter = 3000, warmup = 1500, seed = 42,
     backend = "cmdstanr", cores = 4,
+    init = 0,
     control = list(adapt_delta = 0.95),
     file = paste0(base_dir, "/Models/Script04_Model2_", dataset_info$name),
     silent = 2, refresh = 0
@@ -509,13 +511,14 @@ run_script_04 <- function(dataset_info) {
   cat("  LOO-IC:", round(loo2$estimates["looic", "Estimate"], 1), "\n\n")
 
   # MODEL 3: BOTH PREDICTORS
-  cat("MODEL 3: Both Autonomous + RAI\n")
+  cat("MODEL 3: Both Autonomous + GSC\n")
   start3 <- Sys.time()
   fit3 <- brm(
-    Meaning_ord ~ Autonomous + RAI + Depression + Anxiety + Age + Sex,
+    Meaning_ord ~ Autonomous + GSC + Depression + Anxiety + Age + Sex,
     data = data, family = cumulative("probit"), prior = priors,
     chains = 4, iter = 3000, warmup = 1500, seed = 42,
     backend = "cmdstanr", cores = 4,
+    init = 0,
     control = list(adapt_delta = 0.95),
     file = paste0(base_dir, "/Models/Script04_Model3_", dataset_info$name),
     silent = 2, refresh = 0
@@ -542,7 +545,7 @@ run_script_04 <- function(dataset_info) {
   if (grepl("fit1", best_model)) {
     cat("  → Autonomous-only wins (supports DAG 2 / H1)\n\n")
   } else if (grepl("fit2", best_model)) {
-    cat("  → RAI-only wins (supports DAG 1 / traditional SDT)\n\n")
+    cat("  → GSC-only wins (supports DAG 1 / traditional SDT)\n\n")
   } else {
     cat("  → Both-predictors wins (supports DAG 3 / dual pathway)\n\n")
   }
@@ -556,7 +559,7 @@ run_script_04 <- function(dataset_info) {
   auto_upper1 <- post1["b_Autonomous", "Q97.5"]
 
   auto_est3 <- post3["b_Autonomous", "Estimate"]
-  rai_est3 <- post3["b_RAI", "Estimate"]
+  gsc_est3 <- post3["b_GSC", "Estimate"]
 
   cat("KEY FINDINGS:\n")
   cat("  Model 1 - Autonomous:", round(auto_est1, 3),
@@ -565,15 +568,15 @@ run_script_04 <- function(dataset_info) {
 
   cat("  Model 3 - Autonomous:", round(auto_est3, 3))
   if (abs(auto_est3 - auto_est1) / auto_est1 < 0.1) {
-    cat(" (stable when RAI added)\n")
+    cat(" (stable when GSC added)\n")
   } else {
-    cat(" (changes when RAI added)\n")
+    cat(" (changes when GSC added)\n")
   }
 
-  cat("  Model 3 - RAI:", round(rai_est3, 3))
-  rai_lower3 <- post3["b_RAI", "Q2.5"]
-  rai_upper3 <- post3["b_RAI", "Q97.5"]
-  if (rai_lower3 * rai_upper3 > 0) {
+  cat("  Model 3 - GSC:", round(gsc_est3, 3))
+  gsc_lower3 <- post3["b_GSC", "Q2.5"]
+  gsc_upper3 <- post3["b_GSC", "Q97.5"]
+  if (gsc_lower3 * gsc_upper3 > 0) {
     cat(" (credible)\n")
   } else {
     cat(" (uncertain - crosses zero)\n")
@@ -623,7 +626,7 @@ run_script_04 <- function(dataset_info) {
     key_findings = list(
       model1_autonomous = c(est = auto_est1, lower = auto_lower1, upper = auto_upper1),
       model3_autonomous = auto_est3,
-      model3_rai = rai_est3
+      model3_gsc = gsc_est3
     )
   )
 
@@ -822,8 +825,8 @@ run_script_05 <- function(dataset_info) {
 
 run_script_06 <- function(dataset_info) {
   data_raw <- read.csv(dataset_info$path) %>%
-    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
-    filter(complete.cases(Autonomous, Controlled, RAI, Meaning, Depression, Anxiety, Age, Sex))
+    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore, GSC = Autonomous - Controlled) %>%
+    filter(complete.cases(Autonomous, Controlled, GSC, Meaning, Depression, Anxiety, Age, Sex))
 
   # Standardize all variables for proper DAG comparison
   data <- data_raw %>%
@@ -831,18 +834,18 @@ run_script_06 <- function(dataset_info) {
       Meaning_z = scale(Meaning)[,1],
       Autonomous_z = scale(Autonomous)[,1],
       Controlled_z = scale(Controlled)[,1],
-      RAI_z = scale(RAI)[,1],
+      GSC_z = scale(GSC)[,1],
       Depression_z = scale(Depression)[,1],
       Anxiety_z = scale(Anxiety)[,1],
       Age_z = scale(Age)[,1],
       Sex_z = as.numeric(Sex) - mean(as.numeric(Sex))
     )
 
-  # DAG 1: RAI is causally primary (traditional SDT)
+  # DAG 1: GSC is causally primary (traditional SDT)
   dag1 <- '
     # Regressions
-    Meaning_z ~ b_rai*RAI_z + b_dep*Depression_z + b_anx*Anxiety_z + b_age*Age_z + b_sex*Sex_z
-    RAI_z ~ Depression_z + Anxiety_z + Age_z + Sex_z
+    Meaning_z ~ b_gsc*GSC_z + b_dep*Depression_z + b_anx*Anxiety_z + b_age*Age_z + b_sex*Sex_z
+    GSC_z ~ Depression_z + Anxiety_z + Age_z + Sex_z
 
     # Covariances among exogenous variables
     Depression_z ~~ Anxiety_z + Age_z + Sex_z
@@ -851,21 +854,18 @@ run_script_06 <- function(dataset_info) {
   '
 
   # DAG 2: Autonomous primary, Controlled = 0 (YOUR HYPOTHESIS)
+  # Note: GSC_z removed from DAGs 2 & 3 because GSC = Autonomous - Controlled is an exact linear combination
   dag2 <- '
     # Regressions
     Meaning_z ~ b_aut*Autonomous_z + 0*Controlled_z + b_dep*Depression_z + b_anx*Anxiety_z + b_age*Age_z + b_sex*Sex_z
     Autonomous_z ~ Depression_z + Anxiety_z + Age_z + Sex_z
     Controlled_z ~ Depression_z + Anxiety_z + Age_z + Sex_z
-    RAI_z ~ Autonomous_z + Controlled_z
 
     # Covariances
     Depression_z ~~ Anxiety_z + Age_z + Sex_z
     Anxiety_z ~~ Age_z + Sex_z
     Age_z ~~ Sex_z
     Autonomous_z ~~ Controlled_z
-
-    # Residual covariance
-    Meaning_z ~~ RAI_z
   '
 
   # DAG 3: Dual-pathway (both Autonomous and Controlled free)
@@ -874,16 +874,12 @@ run_script_06 <- function(dataset_info) {
     Meaning_z ~ b_aut*Autonomous_z + b_ctrl*Controlled_z + b_dep*Depression_z + b_anx*Anxiety_z + b_age*Age_z + b_sex*Sex_z
     Autonomous_z ~ Depression_z + Anxiety_z + Age_z + Sex_z
     Controlled_z ~ Depression_z + Anxiety_z + Age_z + Sex_z
-    RAI_z ~ Autonomous_z + Controlled_z
 
     # Covariances
     Depression_z ~~ Anxiety_z + Age_z + Sex_z
     Anxiety_z ~~ Age_z + Sex_z
     Age_z ~~ Sex_z
     Autonomous_z ~~ Controlled_z
-
-    # Residual covariance
-    Meaning_z ~~ RAI_z
   '
 
   # Fit models with proper estimator
@@ -915,16 +911,16 @@ run_script_07 <- function(dataset_info) {
 
   # Load and prepare data
   data <- read.csv(dataset_info$path) %>%
-    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore) %>%
-    filter(complete.cases(Autonomous, RAI, Meaning, Depression, Anxiety, Age, Sex))
+    mutate(Meaning = MILjudgements, Depression = DEP_Corrected, Anxiety = GADscore, GSC = Autonomous - Controlled) %>%
+    filter(complete.cases(Autonomous, GSC, Meaning, Depression, Anxiety, Age, Sex))
 
   cat("Original sample size: N =", nrow(data), "\n\n")
 
   # ============================================================================
   # BASELINE MODEL (MODEL 3 FROM H1)
   # ============================================================================
-  cat("BASELINE MODEL: Both Autonomous + RAI\n")
-  m_baseline <- lm(Meaning ~ Autonomous + RAI + Depression + Anxiety + Age + Sex, data = data)
+  cat("BASELINE MODEL: Both Autonomous + GSC\n")
+  m_baseline <- lm(Meaning ~ Autonomous + GSC + Depression + Anxiety + Age + Sex, data = data)
   sum_baseline <- summary(m_baseline)
 
   auto_b_base <- coef(m_baseline)["Autonomous"]
@@ -932,15 +928,15 @@ run_script_07 <- function(dataset_info) {
   auto_t_base <- sum_baseline$coefficients["Autonomous", "t value"]
   auto_p_base <- sum_baseline$coefficients["Autonomous", "Pr(>|t|)"]
 
-  rai_b_base <- coef(m_baseline)["RAI"]
-  rai_se_base <- sum_baseline$coefficients["RAI", "Std. Error"]
-  rai_t_base <- sum_baseline$coefficients["RAI", "t value"]
-  rai_p_base <- sum_baseline$coefficients["RAI", "Pr(>|t|)"]
+  gsc_b_base <- coef(m_baseline)["GSC"]
+  gsc_se_base <- sum_baseline$coefficients["GSC", "Std. Error"]
+  gsc_t_base <- sum_baseline$coefficients["GSC", "t value"]
+  gsc_p_base <- sum_baseline$coefficients["GSC", "Pr(>|t|)"]
 
   cat("  Autonomous: b =", round(auto_b_base, 3), ", SE =", round(auto_se_base, 3),
       ", t =", round(auto_t_base, 2), ", p =", format.pval(auto_p_base, digits = 3), "\n")
-  cat("  RAI: b =", round(rai_b_base, 3), ", SE =", round(rai_se_base, 3),
-      ", t =", round(rai_t_base, 2), ", p =", format.pval(rai_p_base, digits = 3), "\n")
+  cat("  GSC: b =", round(gsc_b_base, 3), ", SE =", round(gsc_se_base, 3),
+      ", t =", round(gsc_t_base, 2), ", p =", format.pval(gsc_p_base, digits = 3), "\n")
   cat("  R² =", round(sum_baseline$r.squared, 4), "\n\n")
 
   # ============================================================================
@@ -966,7 +962,7 @@ run_script_07 <- function(dataset_info) {
 
     # Re-fit model without influential cases
     cat("ROBUST MODEL (Influential cases excluded):\n")
-    m_robust <- lm(Meaning ~ Autonomous + RAI + Depression + Anxiety + Age + Sex, data = data_robust)
+    m_robust <- lm(Meaning ~ Autonomous + GSC + Depression + Anxiety + Age + Sex, data = data_robust)
     sum_robust <- summary(m_robust)
 
     auto_b_robust <- coef(m_robust)["Autonomous"]
@@ -974,15 +970,15 @@ run_script_07 <- function(dataset_info) {
     auto_t_robust <- sum_robust$coefficients["Autonomous", "t value"]
     auto_p_robust <- sum_robust$coefficients["Autonomous", "Pr(>|t|)"]
 
-    rai_b_robust <- coef(m_robust)["RAI"]
-    rai_se_robust <- sum_robust$coefficients["RAI", "Std. Error"]
-    rai_t_robust <- sum_robust$coefficients["RAI", "t value"]
-    rai_p_robust <- sum_robust$coefficients["RAI", "Pr(>|t|)"]
+    gsc_b_robust <- coef(m_robust)["GSC"]
+    gsc_se_robust <- sum_robust$coefficients["GSC", "Std. Error"]
+    gsc_t_robust <- sum_robust$coefficients["GSC", "t value"]
+    gsc_p_robust <- sum_robust$coefficients["GSC", "Pr(>|t|)"]
 
     cat("  Autonomous: b =", round(auto_b_robust, 3), ", SE =", round(auto_se_robust, 3),
         ", t =", round(auto_t_robust, 2), ", p =", format.pval(auto_p_robust, digits = 3), "\n")
-    cat("  RAI: b =", round(rai_b_robust, 3), ", SE =", round(rai_se_robust, 3),
-        ", t =", round(rai_t_robust, 2), ", p =", format.pval(rai_p_robust, digits = 3), "\n")
+    cat("  GSC: b =", round(gsc_b_robust, 3), ", SE =", round(gsc_se_robust, 3),
+        ", t =", round(gsc_t_robust, 2), ", p =", format.pval(gsc_p_robust, digits = 3), "\n")
     cat("  R² =", round(sum_robust$r.squared, 4), "\n\n")
 
     # ============================================================================
@@ -1011,30 +1007,30 @@ run_script_07 <- function(dataset_info) {
     }
     cat("\n")
 
-    # RAI comparison
-    rai_b_change <- ((rai_b_robust - rai_b_base) / abs(rai_b_base)) * 100
-    rai_se_change <- ((rai_se_robust - rai_se_base) / rai_se_base) * 100
+    # GSC comparison
+    gsc_b_change <- ((gsc_b_robust - gsc_b_base) / abs(gsc_b_base)) * 100
+    gsc_se_change <- ((gsc_se_robust - gsc_se_base) / gsc_se_base) * 100
 
-    cat("  RAI:\n")
-    cat("    Baseline: b =", round(rai_b_base, 3), ", SE =", round(rai_se_base, 3), "\n")
-    cat("    Robust:   b =", round(rai_b_robust, 3), ", SE =", round(rai_se_robust, 3), "\n")
-    cat("    Change: b", sprintf("%+.1f%%", rai_b_change), ", SE", sprintf("%+.1f%%", rai_se_change), "\n")
+    cat("  GSC:\n")
+    cat("    Baseline: b =", round(gsc_b_base, 3), ", SE =", round(gsc_se_base, 3), "\n")
+    cat("    Robust:   b =", round(gsc_b_robust, 3), ", SE =", round(gsc_se_robust, 3), "\n")
+    cat("    Change: b", sprintf("%+.1f%%", gsc_b_change), ", SE", sprintf("%+.1f%%", gsc_se_change), "\n")
 
-    if (rai_p_base >= 0.05 && rai_p_robust >= 0.05) {
+    if (gsc_p_base >= 0.05 && gsc_p_robust >= 0.05) {
       cat("    ✓ Non-significant in both (H1 robust)\n")
-      rai_robust <- TRUE
-    } else if (rai_p_base < 0.05 && rai_p_robust < 0.05) {
+      gsc_robust <- TRUE
+    } else if (gsc_p_base < 0.05 && gsc_p_robust < 0.05) {
       cat("    ~ Significant in both\n")
-      rai_robust <- TRUE
+      gsc_robust <- TRUE
     } else {
       cat("    ⚠ Significance differs\n")
-      rai_robust <- FALSE
+      gsc_robust <- FALSE
     }
     cat("\n")
 
     # Overall robustness
     cat("H4 ROBUSTNESS CHECK:\n")
-    if (auto_robust && rai_robust) {
+    if (auto_robust && gsc_robust) {
       cat("  ✓ ROBUST: Results consistent after excluding influential cases\n\n")
     } else {
       cat("  ⚠ NOT FULLY ROBUST: Some changes in significance\n\n")
@@ -1046,12 +1042,12 @@ run_script_07 <- function(dataset_info) {
     sum_robust <- sum_baseline
     auto_b_robust <- auto_b_base
     auto_p_robust <- auto_p_base
-    rai_b_robust <- rai_b_base
-    rai_p_robust <- rai_p_base
+    gsc_b_robust <- gsc_b_base
+    gsc_p_robust <- gsc_p_base
     auto_robust <- TRUE
-    rai_robust <- TRUE
+    gsc_robust <- TRUE
     auto_b_change <- 0
-    rai_b_change <- 0
+    gsc_b_change <- 0
   }
 
   # Save comprehensive results
@@ -1068,12 +1064,12 @@ run_script_07 <- function(dataset_info) {
       auto_baseline = c(b = auto_b_base, p = auto_p_base),
       auto_robust = c(b = auto_b_robust, p = auto_p_robust),
       auto_change_pct = auto_b_change,
-      rai_baseline = c(b = rai_b_base, p = rai_p_base),
-      rai_robust = c(b = rai_b_robust, p = rai_p_robust),
-      rai_change_pct = rai_b_change,
+      gsc_baseline = c(b = gsc_b_base, p = gsc_p_base),
+      gsc_robust = c(b = gsc_b_robust, p = gsc_p_robust),
+      gsc_change_pct = gsc_b_change,
       auto_robust = auto_robust,
-      rai_robust = rai_robust,
-      overall_robust = auto_robust && rai_robust
+      gsc_robust = gsc_robust,
+      overall_robust = auto_robust && gsc_robust
     )
   )
 
@@ -1116,6 +1112,7 @@ run_script_08 <- function(dataset_info) {
     data = data, family = cumulative("probit"), prior = priors,
     chains = 4, iter = 3000, warmup = 1500, seed = 42,
     backend = "cmdstanr", cores = 4,
+    init = 0,
     control = list(adapt_delta = 0.95),
     file = paste0(base_dir, "/Models/Script08_", dataset_info$name),
     silent = 2, refresh = 0
@@ -1437,15 +1434,17 @@ run_script_10 <- function(dataset_info) {
   if ("SCReasons" %in% names(data_raw)) {
     data_wide <- data_raw %>%
       dplyr::select(any_of(c("id", mil_items, "SCReasons", "nonSCReasons",
-                             "RAI", "DEP_Corrected", "GADscore", "Age", "Sex"))) %>%
+                             "DEP_Corrected", "GADscore", "Age", "Sex"))) %>%
       rename(Autonomous = SCReasons, Controlled = nonSCReasons,
              Depression = DEP_Corrected, Anxiety = GADscore) %>%
+      mutate(GSC = Autonomous - Controlled) %>%
       filter(complete.cases(.))
   } else {
     data_wide <- data_raw %>%
       dplyr::select(any_of(c("id", mil_items, "Autonomous", "Controlled",
-                             "RAI", "DEP_Corrected", "GADscore", "Age", "Sex"))) %>%
+                             "DEP_Corrected", "GADscore", "Age", "Sex"))) %>%
       rename(Depression = DEP_Corrected, Anxiety = GADscore) %>%
+      mutate(GSC = Autonomous - Controlled) %>%
       filter(complete.cases(.))
   }
 
@@ -1469,7 +1468,7 @@ run_script_10 <- function(dataset_info) {
 
   cat("Testing 3 competing models (item-level DAG comparison):\n")
   cat("  Model 1: Autonomous only + controls (DAG 2)\n")
-  cat("  Model 2: RAI only + controls (DAG 1)\n")
+  cat("  Model 2: GSC only + controls (DAG 1)\n")
   cat("  Model 3: Both Autonomous + Controlled + controls (DAG 3)\n\n")
 
   # ============================================================================
@@ -1512,14 +1511,14 @@ run_script_10 <- function(dataset_info) {
   cat("  LOO-IC:", round(loo1$estimates["looic", "Estimate"], 1), "\n\n")
 
   # ============================================================================
-  # MODEL 2: RAI ONLY (DAG 1 ITEM-LEVEL)
+  # MODEL 2: GSC ONLY (DAG 1 ITEM-LEVEL)
   # ============================================================================
-  cat("MODEL 2: RAI Only\n")
-  cat("Formula: Rating ~ RAI + Depression + Anxiety + Age + Sex + (1|Person) + (1|Item)\n")
+  cat("MODEL 2: GSC Only\n")
+  cat("Formula: Rating ~ GSC + Depression + Anxiety + Age + Sex + (1|Person) + (1|Item)\n")
   start_time2 <- Sys.time()
 
   fit2 <- brm(
-    Rating ~ RAI + Depression + Anxiety + Age + Sex + (1|Person) + (1|Item),
+    Rating ~ GSC + Depression + Anxiety + Age + Sex + (1|Person) + (1|Item),
     data = data_long, family = cumulative("probit"), prior = priors,
     chains = 4, iter = 2000, warmup = 1000, seed = 42,
     backend = "cmdstanr", cores = 4,
@@ -1604,7 +1603,7 @@ run_script_10 <- function(dataset_info) {
   if (grepl("fit1", best_model)) {
     cat("  → Autonomous-only model wins (supports DAG 2 / H1)\n\n")
   } else if (grepl("fit2", best_model)) {
-    cat("  → RAI-only model wins (supports DAG 1 / traditional SDT)\n\n")
+    cat("  → GSC-only model wins (supports DAG 1 / traditional SDT)\n\n")
   } else {
     cat("  → Both-predictors model wins (supports DAG 3 / dual pathway)\n\n")
   }
@@ -1734,7 +1733,7 @@ for (ds in datasets) {
   # Run all 10 scripts (skip 01 - data prep)
   scripts <- list(
     list(num = "02", func = run_script_02, name = "H1 Comparative Regression"),
-    list(num = "03", func = run_script_03, name = "H1 Mediation Analysis (RAI→Auto→Meaning)"),
+    list(num = "03", func = run_script_03, name = "H1 Mediation Analysis (GSC→Auto→Meaning)"),
     list(num = "03b", func = run_script_03b, name = "Supplementary Mediation (Auto→Dep→Meaning)"),
     list(num = "04", func = run_script_04, name = "H1 Bayesian Ordinal"),
     list(num = "05", func = run_script_05, name = "H2 Controlled Motivation"),
