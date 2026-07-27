@@ -8,6 +8,20 @@ library(dplyr)
 library(lavaan)
 library(blavaan)
 
+# Helper: get full parameter table with CIs from blavaan
+blavaan_params <- function(fit) {
+  pt <- parTable(fit)
+  invisible(capture.output(sm <- summary(fit)))
+  cn <- trimws(colnames(sm))
+  lo_idx <- which(cn == "pi.lower")
+  hi_idx <- which(cn == "pi.upper")
+  if (length(lo_idx) > 0 && length(hi_idx) > 0) {
+    pt$pi.lower <- as.numeric(sm[, lo_idx])
+    pt$pi.upper <- as.numeric(sm[, hi_idx])
+  }
+  return(pt)
+}
+
 cat("================================================================================\n")
 cat("SCRIPT 14: BIDIRECTIONAL TEST - ARE MIL AND DEP DISTINCT SYSTEMS?\n")
 cat("================================================================================\n")
@@ -135,11 +149,11 @@ cat("RESULTS COMPARISON\n")
 cat("================================================================================\n\n")
 
 # Extract from Model 1
-params1 <- parameterEstimates(fit1)
+params1 <- blavaan_params(fit1)
 dep_mil <- params1[params1$label == "dep_mil", ]
 
 # Extract from Model 2
-params2 <- parameterEstimates(fit2)
+params2 <- blavaan_params(fit2)
 mil_dep <- params2[params2$label == "mil_dep", ]
 
 # Also get AUTO and CTRL effects from both models
